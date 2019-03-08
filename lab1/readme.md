@@ -4,8 +4,11 @@
 * timeout handling
     * print * in log
 * report
-    
+
 ---
+##### 盡量先push到branch喔
+---
+
 # Workflow
 和投影片大致相同, 步驟有標記在traceroute.cpp的註解裡面
 1. 建立Socket

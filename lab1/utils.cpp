@@ -23,7 +23,7 @@ void build_pkt(struct icmp_pkt *icmp, int ttl){
 	icmp->type = ECHO_REQUEST;
 	icmp->code = 0;
     icmp->id = getpid();
-    icmp->seq = ttl-1;
+    icmp->seq = ttl;
     icmp->checksum = checkSum(icmp);
     gettimeofday(&timestamp, NULL);
 }
@@ -79,5 +79,6 @@ int parse_pkt(char buf[], const int pkt_len){
 		cnt = 0;
 	else
 		ttl_add = 0;
+
 	return ttl_add;
 }

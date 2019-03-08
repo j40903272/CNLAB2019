@@ -1,4 +1,8 @@
-/*  Used structures  */
+/*  Structures defined in headers files
+	just listing out to be clear
+*/
+
+
 
 // netinet/ip.h
 struct ip {
@@ -35,4 +39,11 @@ typedef uint32_t in_addr_t;
 struct in_addr
 {
 	in_addr_t s_addr;
+};
+
+
+// sys/time.h
+struct timeval {
+	time_t      tv_sec;     /* seconds */
+	suseconds_t tv_usec;    /* microseconds */
 };

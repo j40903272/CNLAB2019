@@ -3,15 +3,12 @@
 struct timeval timestamp;
 
 int main(int argc, char* argv[]){
-	// printf("%d %d %d\n", sizeof(unsigned short), sizeof(short), sizeof(unsigned char));
-	// return 0;
-	
 	if(argc != 2){
 		fprintf(stderr, "Usage : traceroute HOSTNAME\n");
 		exit(0);
 	}
 
-	int ttl = 2, n = 0;
+	int ttl = 1, n = 0;
 	socklen_t fromlen = sizeof(struct sockaddr_in);
 	char buf[1024];
 	struct hostent *host;
@@ -28,7 +25,7 @@ int main(int argc, char* argv[]){
 
     
 
-    // create hostname & address
+    // 0. get hostname & address
 	if(inet_aton(argv[1], &sin_addr) == 0){
     	// domain name
         if((host = gethostbyname(argv[1])) == NULL){
@@ -47,7 +44,8 @@ int main(int argc, char* argv[]){
     fprintf(stderr, "\nTrace [%s] [%s] : %d bytes of data.\n\n", host->h_name, inet_ntoa(sin_addr), (int)sizeof(struct icmp_pkt));
 
 
-    // create sockets
+
+    // 1. create sockets
 	int send_sock = 0, recv_sock = 0;
 	if((send_sock = socket(AF_INET, SOCK_RAW, IPPROTO_ICMP)) == -1){
 		perror("socket error");
@@ -57,7 +55,6 @@ int main(int argc, char* argv[]){
 		perror(strerror(recv_sock));
 		exit(0);
 	}
-
 	// fill in send address
 	send.sin_family = AF_INET;
 	send.sin_addr = sin_addr;
@@ -65,16 +62,17 @@ int main(int argc, char* argv[]){
 
 
 
-	// start
 	while(ttl < 30){
 		if(setsockopt(send_sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) == -1){
 			perror("set socket");
 			continue;
 		}
-
+		// 2. create icmp packet
 		memset(&icmp_pkt, 0, sizeof(struct icmp_pkt));
 		build_pkt(&icmp_pkt, ttl);
 
+
+		// 3. send & receive
 		if(sendto(send_sock, &icmp_pkt, sizeof(icmp_pkt), 0, (struct sockaddr *)&send, sizeof(send)) == -1){
             perror("sendto");
             continue;
@@ -83,9 +81,9 @@ int main(int argc, char* argv[]){
             perror("recvform");
             continue;
         }
+
+        // 4. 解析封包 + 5. 輸出結果
         ttl += parse_pkt(buf, n);
-        // if(recv.sin_addr.s_addr == sin_addr.s_addr)
-        // 	break;
 	}
 
 

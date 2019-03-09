@@ -5,8 +5,8 @@ extern struct timeval timestamp;
 unsigned long long timediff(struct timeval *st){
 	struct timeval ed;
 	gettimeofday(&ed, NULL);
-    unsigned long long t = 1000000 * (ed.tv_sec-st->tv_sec)+ ed.tv_usec-st->tv_usec;
-    return t/1000;
+	unsigned long long t = 1000000 * (ed.tv_sec-st->tv_sec)+ ed.tv_usec-st->tv_usec;
+	return t/1000;
 }
 
 unsigned short checkSum(const struct icmp_pkt *pkt){
@@ -22,10 +22,10 @@ unsigned short checkSum(const struct icmp_pkt *pkt){
 void build_pkt(struct icmp_pkt *icmp, int ttl){
 	icmp->type = ECHO_REQUEST;
 	icmp->code = 0;
-    icmp->id = getpid();
-    icmp->seq = ttl;
-    icmp->checksum = checkSum(icmp);
-    gettimeofday(&timestamp, NULL);
+	icmp->id = getpid();
+	icmp->seq = ttl;
+	icmp->checksum = checkSum(icmp);
+	gettimeofday(&timestamp, NULL);
 }
 
 void print_pkt_info(struct ip *ip, struct icmp_pkt *icmp){

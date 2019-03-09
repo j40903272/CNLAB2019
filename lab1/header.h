@@ -17,21 +17,21 @@
 #include <unistd.h>
 
 
-#define ECHO_REPLY 	0
+#define ECHO_REPLY  0
 #define ECHO_REQUEST 8
 #define TIME_EXEC 11
 
 // #define ErrorAndExit(status) \
 //     fprintf(stderr, "Error: Line %u in file %s\n\n", __LINE__, __FILE__); \
-//		exit(0);
+//      exit(0);
 
 struct icmp_pkt{
-	uint8_t type;
-	uint8_t code;
-	uint16_t checksum;
-	uint16_t id;
-	uint16_t seq;
-	// char data[32];
+    uint8_t type;
+    uint8_t code;
+    uint16_t checksum;
+    uint16_t id;
+    uint16_t seq;
+    // char data[32];
 };
 
 

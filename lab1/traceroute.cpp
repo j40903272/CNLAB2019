@@ -8,19 +8,24 @@ int main(int argc, char* argv[]){
         exit(0);
     }
 
-    int ttl = 1, n = 0;
+    int ttl = 1, n = 0, cnt = 0;
     socklen_t fromlen = sizeof(struct sockaddr_in);
     char buf[1024];
     struct hostent *host;
     struct icmp_pkt icmp_pkt;
     struct in_addr sin_addr;
     struct sockaddr_in send, recv;
+    struct timeval timeout;
+    struct parse_result result;
+
 
     memset(&buf, 0, sizeof(buf));
     memset(&icmp_pkt, 0, sizeof(icmp_pkt));
     memset(&sin_addr, 0, sizeof(sin_addr));
     memset(&send, 0, sizeof(struct sockaddr_in));
     memset(&recv, 0, sizeof(struct sockaddr_in));
+    timeout.tv_sec = 1;
+    timeout.tv_usec = 10000;
 
 
 
@@ -61,11 +66,19 @@ int main(int argc, char* argv[]){
 
 
 
+    bool hashostname = false;
+    unsigned long long time_record[3];
+    struct in_addr node_ip;
 
     while(ttl < 30){
+        
         if(setsockopt(send_sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) == -1){
-            perror("set socket");
-            continue;
+            perror("set send socket");
+            exit(0);
+        }
+        if (setsockopt(recv_sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout)) < 0) {
+            perror("set recv socket");
+            exit(0);
         }
         // 2. create icmp packet
         memset(&icmp_pkt, 0, sizeof(struct icmp_pkt));
@@ -75,15 +88,53 @@ int main(int argc, char* argv[]){
         // 3. send & receive
         if(sendto(send_sock, &icmp_pkt, sizeof(icmp_pkt), 0, (struct sockaddr *)&send, sizeof(send)) == -1){
             perror("sendto");
-            continue;
+            exit(0);
         }
         if((n = recvfrom(recv_sock, buf, sizeof(buf), 0, (struct sockaddr *)&recv, &fromlen))  == -1){
-            perror("recvform");
-            continue;
+            if(errno != EAGAIN)
+                perror("recvform");
         }
 
-        // 4. 解析封包 + 5. 輸出結果
-        ttl += parse_pkt(buf, n);
+        // 4. 解析封包
+        result = parse_pkt(buf, n, ttl);
+        if(result.flag == PARSE_FAIL)
+            continue;
+        else if(result.flag == PARSE_SUCCESS){
+            time_record[cnt] = result.travel_time;
+            node_ip = result.ip->ip_src;
+            hashostname = true;
+        }
+        else
+            time_record[cnt] = 99999;
+
+        
+        
+        // 5. 輸出結果
+        if(cnt++ == 2){
+            // print log
+            fprintf(stderr, "%2d\t", ttl);
+
+            if(!hashostname)
+                fprintf(stderr, "Timeout\t\t");
+            else
+                fprintf(stderr, "%s\t", inet_ntoa(node_ip));
+
+            
+            for(int i = 0 ; i < 3 ; i++){
+                if(time_record[i] == 99999)
+                    fprintf(stderr, "        *%c", " \n"[i == 2]);
+                else
+                    fprintf(stderr, "%6lld ms%c", time_record[i], " \n"[i == 2]);
+            }
+            // reset
+            cnt = 0;
+            hashostname = false;
+            ttl++;
+
+            //if(!memcmp(node_ip, sin_addr, sizeof(node_ip)))
+            if(node_ip.s_addr == sin_addr.s_addr)
+                break;
+        }
     }
 
 

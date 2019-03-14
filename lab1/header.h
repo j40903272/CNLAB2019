@@ -21,6 +21,11 @@
 #define ECHO_REQUEST 8
 #define TIME_EXEC 11
 
+#define PARSE_FAIL 1
+#define PARSE_SUCCESS 2
+#define PARSE_TIMEOUT 3
+
+
 // #define ErrorAndExit(status) \
 //     fprintf(stderr, "Error: Line %u in file %s\n\n", __LINE__, __FILE__); \
 //      exit(0);
@@ -34,13 +39,20 @@ struct icmp_pkt{
     // char data[32];
 };
 
+struct parse_result{
+    int flag;
+    unsigned long long travel_time;
+    struct ip *ip;
+    struct icmp_pkt *icmp;
+};
+
 
 
 unsigned long long timediff(struct timeval *);
 unsigned short checkSum(const struct icmp_pkt *);
-void build_pkt(struct icmp_pkt *, int);
+void build_pkt(struct icmp_pkt *, const int);
 void print_pkt_info(struct ip *, struct icmp_pkt *);
-int parse_pkt(char*, const int);
+struct parse_result parse_pkt(char*, const int, const int);
 
 
 #endif /* __HEADER_H__ */

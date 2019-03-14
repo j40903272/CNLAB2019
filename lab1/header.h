@@ -15,7 +15,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-
+#include <vector>
+#include <queue>
+#include <string>
 
 #define ECHO_REPLY  0
 #define ECHO_REQUEST 8

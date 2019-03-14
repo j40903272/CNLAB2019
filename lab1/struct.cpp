@@ -1,9 +1,34 @@
 /*  Structures defined in headers files
     just listing out to be clear
 */
+//#include "header.h"
+#include <stdint.h>
+#include <sys/types.h>
+#include <stdio.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <sys/time.h>
+
+//// netinet/in.h
+//struct sockaddr_in {
+//    short sin_family;
+//    unsigned short sin_port;
+//    struct in_addr sin_addr;
+//    unsigned char sin_zero[8];
+//};
+//
+//typedef uint32_t in_addr_t;
+//struct in_addr
+//{
+//    in_addr_t s_addr;
+//};
 
 
-
+//// sys/time.h
+//struct timeval {
+//    time_t      tv_sec;     /* seconds */
+//    suseconds_t tv_usec;    /* microseconds */
+//};
 // netinet/ip.h
 struct ip {
 #if BYTE_ORDER == LITTLE_ENDIAN 
@@ -27,23 +52,3 @@ struct ip {
 };
 
 
-// netinet/in.h
-struct sockaddr_in {
-    short sin_family;
-    unsigned short sin_port;
-    struct in_addr sin_addr;
-    unsigned char sin_zero[8];
-};
-
-typedef uint32_t in_addr_t;
-struct in_addr
-{
-    in_addr_t s_addr;
-};
-
-
-// sys/time.h
-struct timeval {
-    time_t      tv_sec;     /* seconds */
-    suseconds_t tv_usec;    /* microseconds */
-};

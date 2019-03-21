@@ -6,27 +6,31 @@ class pkt_task
 {
 public:
 	pkt_task();
-	pkt_task(char* ,int, bool, int);
+	pkt_task(std::vector<char> ,int, bool, int, int);
 	~pkt_task();
-	std::string buff;
 	int pkt_len;
+	int ip_len;
 	bool timeout_flag;
 	int seq_number;
+	std::vector<char> buff;
 private:
 
 };
 
-pkt_task::pkt_task(char _buff[], int _pkt_len, bool _timeout_flag, int _seq_number)
-{
-	std::string tmp(_buff);
-	this->buff = tmp;
-	this->pkt_len = _pkt_len;
-	this->timeout_flag = _timeout_flag;
-	this->seq_number = _seq_number;
-}
+
 pkt_task::pkt_task()
 {
 }
+pkt_task::pkt_task(std::vector<char> _buff, int _pkt_len, bool _timeout_flag, int _seq_number, int _ip_len)
+{
+	//std::vector<char> tmp(_buff,_buff + length(_buff));
+	this->buff = _buff;
+	this->pkt_len = _pkt_len;
+	this->timeout_flag = _timeout_flag;
+	this->seq_number = _seq_number;
+	this->ip_len = _ip_len;
+}
+
 pkt_task::~pkt_task()
 {
 }
@@ -34,6 +38,7 @@ pkt_task::~pkt_task()
 std::vector<int> old_already_timeout_icmp_seq_list;
 std::vector<int> old_already_complete_icmp_seq_list;
 std::queue<pkt_task> task_queue;
+
 
 unsigned long long timediff(struct timeval *st){
     struct timeval ed;
@@ -70,70 +75,136 @@ void print_pkt_info(struct ip *ip, struct icmp_pkt *icmp){
     fprintf(stderr, "\tseq %d\n", icmp->seq);
 }
 
+#define MAX_WAIT 30
+
 int parse_pkt(char buf[], int pkt_len){
     struct ip *ip;
     struct icmp_pkt *icmp;
     int ttl_add = 1;
     static int cnt = 0;
 	static int now_task_seq_should_be = 1;
+	static int max_wait = MAX_WAIT;
 
     ip = (struct ip *)buf;
     int ip_len = ip->ip_hl << 2;
     icmp = (struct icmp_pkt *)(buf + ip_len);
 
-    // ip check
-	if (pkt_len == -1) {}
+	// ip check
+	if (pkt_len == -1) {
+		//expire
+	}
 	else {
-		if(ip->ip_p != IPPROTO_ICMP)
+		if (ip->ip_p != IPPROTO_ICMP)
 			return 0;
-		else if((pkt_len - ip_len) < 8){
+		else if ((pkt_len - ip_len) < 8) {
 			fprintf(stderr, "malformed packet\n");
 			return 0;
 		}
 	}
 
-    // icmp check
-    if(icmp->type == ECHO_REPLY && icmp->id == getpid()){
-        if(cnt == 2)
-            ttl_add = 30;
-    }
-    else if(icmp->type == TIME_EXEC){
-        icmp = (struct icmp_pkt *)((char*)icmp + ip_len + 8);
-        if(icmp->id != getpid())
-            return 0;
-        icmp->type = TIME_EXEC;
-    }
+	// icmp check
+	if (icmp->type == ECHO_REPLY && icmp->id == getpid()) {
 
-    //print_pkt_info(ip, icmp);
+	}
+	else if (icmp->type == TIME_EXEC) {
+		icmp = (struct icmp_pkt *)((char*)icmp + ip_len + 8);
+		if (icmp->id != getpid())
+			return 0;
+		icmp->type = TIME_EXEC;
+	}
+
+
+
+
+	//fprintf(stderr, "expire %s\n", inet_ntoa(ip->ip_src));
+
+	
+
+	static std::vector<std::vector<pkt_task>> trace_table;
+	static int trace_max = 500;
+	static bool initialize_flag = true;
+	if (initialize_flag) {
+		trace_table.resize(trace_max);
+		initialize_flag = false;
+		for (int i = 0; i < trace_max; i++)
+		{
+			std::vector<pkt_task> a;
+			trace_table.push_back(a);
+		}
+	}
+	//trace buff resize
+	if (now_task_seq_should_be >= trace_max) {
+		//fprintf(stderr, "seq buffer full\n");
+		int old_trace_max = trace_max;
+		trace_max *= 2;
+		trace_table.resize(trace_max);
+		for (int i = old_trace_max; i < trace_max; i++)
+		{
+			std::vector<pkt_task> a;
+			trace_table.push_back(a);
+		}
+	}
+
+	//print_pkt_info(ip, icmp);
 	int current_icmp_seq = icmp->seq;
 	bool timeout_flag = pkt_len == -1 && errno == EAGAIN;
+	std::vector<char> buf_tmp;
+	buf_tmp.assign(buf,buf+PACK_BUFF_SIZE);
+	pkt_task current_task(buf_tmp, pkt_len, timeout_flag, current_icmp_seq, ip_len);
+	trace_table[current_icmp_seq].push_back(current_task);
 
-	//pkt_task current_task(buf,pkt_len,timeout_flag,current_icmp_seq);
-	//task_queue.push(current_task);
+	//recover
+	if (trace_table[now_task_seq_should_be].size() != 0) {
 
-	//pkt_task correct_task;
-	////find correct next task
-	//int task_queue_size = task_queue.size();
-	//for (int i = 0; i < task_queue_size; i++) {
-	//	correct_task = task_queue.front();
-	//	task_queue.pop;
-	//	if (correct_task.seq_number != now_task_seq_should_be) {
-	//		task_queue.push(correct_task);
-	//		continue;
-	//	}
-	//	else {
-	//		break;
+		//fprintf(stderr, "\nrecover icmp_seq = %d task_seq = %d cnt = %d sucessfully\n", current_icmp_seq, now_task_seq_should_be, cnt);
+
+		if (trace_table[now_task_seq_should_be].size() > cnt) {
+			ip = (struct ip *) trace_table[now_task_seq_should_be][cnt].buff.data();
+			ip_len = trace_table[now_task_seq_should_be][cnt].ip_len;
+			icmp = (struct icmp_pkt *)(trace_table[now_task_seq_should_be][cnt].buff.data() + ip_len);
+			pkt_len = trace_table[now_task_seq_should_be][cnt].pkt_len;
+			current_icmp_seq = trace_table[now_task_seq_should_be][cnt].seq_number;
+			timeout_flag = trace_table[now_task_seq_should_be][cnt].timeout_flag;
+		}
+		else
+		{
+			//fprintf(stderr, "wait next pkt....\n");
+			return 0;
+		}
+	}
+	else
+	{
+		//fprintf(stderr, "wait next node.... current get %d\n",current_icmp_seq);
+		return 0;
+	}
+
+	//// ip check
+	//if (pkt_len == -1) {}
+	//else {
+	//	if (ip->ip_p != IPPROTO_ICMP)
+	//		return 0;
+	//	else if ((pkt_len - ip_len) < 8) {
+	//		fprintf(stderr, "malformed packet\n");
+	//		return 0;
 	//	}
 	//}
-	//
-	////recover
-	//correct_task.buff.copy(buf,1024);
-	//pkt_len = correct_task.pkt_len;
-	//current_icmp_seq = correct_task.seq_number;
-	//timeout_flag = correct_task.timeout_flag;
-	//ip = (struct ip *)buf;
-	//int ip_len = ip->ip_hl << 2;
-	//icmp = (struct icmp_pkt *)(buf + ip_len);
+
+	//// icmp check
+	//if (icmp->type == ECHO_REPLY && icmp->id == getpid()) {
+	//	    if(cnt == 2)
+	//	        ttl_add = 30;
+	//}
+	//else if (icmp->type == TIME_EXEC) {
+	//	icmp = (struct icmp_pkt *)((char*)icmp + ip_len + 8);
+	//	if (icmp->id != getpid())
+	//		return 0;
+	//	icmp->type = TIME_EXEC;
+	//}
+
+	if (icmp->type == ECHO_REPLY && icmp->id == getpid()) {
+		    if(cnt == 2)
+		        ttl_add = 30;
+	}
 
 	//check old timeout list
 	bool old_already_timeout_icmp_seq = false;
@@ -163,7 +234,7 @@ int parse_pkt(char buf[], int pkt_len){
 			if (pkt_len == -1 && errno == EAGAIN && !old_already_timeout_icmp_seq)
 			{
 				fprintf(stderr, "%2d\t%s\t%6s    ", current_icmp_seq, inet_ntoa(ip->ip_src),"*");
-				old_already_timeout_icmp_seq_list.push_back(current_icmp_seq);
+				//old_already_timeout_icmp_seq_list.push_back(current_icmp_seq);
 			}
 			else {
 				fprintf(stderr, "%2d\t%s\t%6lld ms ", current_icmp_seq, inet_ntoa(ip->ip_src), timediff(&timestamp));
@@ -173,20 +244,21 @@ int parse_pkt(char buf[], int pkt_len){
 			if (pkt_len == -1 && errno == EAGAIN && !old_already_timeout_icmp_seq)
 			{
 				fprintf(stderr, "%6s   %c", "*","\t\n"[cnt == 2]);
-				old_already_timeout_icmp_seq_list.push_back(current_icmp_seq);
+				//old_already_timeout_icmp_seq_list.push_back(current_icmp_seq);
 			}
 			else {
 				fprintf(stderr, "%6lld ms%c", timediff(&timestamp), "\t\n"[cnt==2]);
 			}
 		}		
 	}
-	if (cnt == 2) {
-		//old_already_complete_icmp_seq_list.push_back(current_icmp_seq);
-		fprintf(stderr, "[%6lld]\n",icmp->seq);
-	}
+	//if (cnt == 2) {
+	//	old_already_complete_icmp_seq_list.push_back(current_icmp_seq);
+	//}
 
 	if (cnt++ == 2) {
        cnt = 0;
+	   now_task_seq_should_be++;
+	   //fprintf(stderr,"next: %d\n",now_task_seq_should_be);
 	}
 	else {
         ttl_add = 0;

@@ -25,7 +25,7 @@ int main(int argc, char* argv[]){
 
     int ttl = 1, n = 0;
     socklen_t fromlen = sizeof(struct sockaddr_in);
-    char buf[1024];
+    char buf[PACK_BUFF_SIZE];
     struct hostent *host;
     struct icmp_pkt icmp_pkt;
     struct in_addr sin_addr;
@@ -72,8 +72,10 @@ int main(int argc, char* argv[]){
 
 
 	struct timeval timeout;
-	timeout.tv_sec = 0;
-	timeout.tv_usec = 100;
+	timeout.tv_sec = 1;
+	timeout.tv_usec = 0;
+	int interval = 1;
+	int old_ttl = 1;
 
     while(ttl < 30){
         if(setsockopt(send_sock, IPPROTO_IP, IP_TTL, &ttl, sizeof(ttl)) == -1){
@@ -116,6 +118,11 @@ int main(int argc, char* argv[]){
 			}
         }
 
+		//if (old_ttl != ttl) {
+		//	timeout.tv_sec+=interval;
+		//	fprintf(stderr, "ttl=%d\n", ttl);
+		//}
+		//old_ttl = ttl;
         // 4. 解析封包 + 5. 輸出結果
         ttl += parse_pkt(buf, n);
     }

@@ -22,6 +22,7 @@
 #define ECHO_REPLY  0
 #define ECHO_REQUEST 8
 #define TIME_EXEC 11
+#define PACK_BUFF_SIZE 1024
 
 // #define ErrorAndExit(status) \
 //     fprintf(stderr, "Error: Line %u in file %s\n\n", __LINE__, __FILE__); \

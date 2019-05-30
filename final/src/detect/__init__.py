@@ -1,1 +1,2 @@
 from .basic_detector import basic_detector
+from .connection_detector import connection_detector

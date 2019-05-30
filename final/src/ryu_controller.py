@@ -22,7 +22,7 @@ from ryu.controller.handler import set_ev_cls
 from ryu.lib import hub
 
 import numpy as np
-from detect import basic_detect
+from detect import basic_detector, connection_detector
 
 
 class DDosMonitor(simple_switch_13.SimpleSwitch13):
@@ -32,7 +32,8 @@ class DDosMonitor(simple_switch_13.SimpleSwitch13):
         self.datapaths = {}
         self.monitor_thread = hub.spawn(self._monitor)
         ####
-        self.detector = basic_detect()
+        self.detector = basic_detector()
+        self.detector2 = connection_detector()
         ####
 
     @set_ev_cls(ofp_event.EventOFPStateChange,
@@ -95,6 +96,11 @@ class DDosMonitor(simple_switch_13.SimpleSwitch13):
             out_port = stats.instructions[0].actions[0].port
 
             if self.detector.detected_flags[stats.cookie]:
+
+
+
+
+                ### logging ###
                 self.logger.info("DDos detected !!!!  [Basic detect]")
                 self.logger.info('datapath         '
                          'in-port  eth-dst           '

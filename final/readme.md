@@ -1,11 +1,6 @@
 ## To-Do list
 ---
 #### Add Attack
-| Syntax      | Description |
-| ----------- | ----------- |
-| Header      | Title       |
-| Paragraph   | Text        |
-
 | Method    | Write | status |
 | --------- |-------|------- |
 | ping -f   |       |        |

@@ -1,6 +1,6 @@
 import numpy as np
 
-class basic_detect():
+class basic_detector():
 
     def __init__(self):
         self.flowstats = {}

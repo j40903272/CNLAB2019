@@ -22,7 +22,7 @@ from ryu.controller.handler import set_ev_cls
 from ryu.lib import hub
 
 import numpy as np
-from detect import basic_detect
+from detect import basic_detector
 
 
 class DDosMonitor(simple_switch_13.SimpleSwitch13):
@@ -32,7 +32,7 @@ class DDosMonitor(simple_switch_13.SimpleSwitch13):
         self.datapaths = {}
         self.monitor_thread = hub.spawn(self._monitor)
         ####
-        self.detector = basic_detect()
+        self.detector = basic_detector()
         ####
 
     @set_ev_cls(ofp_event.EventOFPStateChange,

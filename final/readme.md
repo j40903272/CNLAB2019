@@ -1,23 +1,23 @@
 ## To-Do list
 ---
 #### Add Attack
-| Method    | Write | status |
-| --------- |-------|------- |
-| ping -f   |       |        |
-| syn flood |       |        | 
+| Method    | Write | status | Discription |
+| --------- |-------|------- | ----------- |
+| ping -f   |       |        |             |
+| syn flood |       |        |             |
 
----
+
 #### Add detect
-| Method      | Status      | Write |
-| ----------- | ----------- | ----- |
-| Basic       | Finish      | dada  |
-| Entropy     |             |       |
-| Pattern     |             |       |
-| Connection  |             |       |
+| Method      | Status      | Write | Discription |
+| ----------- | ----------- | ----- | ----------- |
+| Basic       | Finish      | dada  |             |
+| Entropy     |             |       |             |
+| Pattern     |             |       |             |
+| Connection  |             |       |             |
 
----
+
 #### Add Mitigation 
-| Method      | Status      | Write |
-| ----------- | ----------- | ----- |
-| Basic       | Finish      | dada  |
-|             |             |       |
+| Method      | Status      | Write | Discription |
+| ----------- | ----------- | ----- | ----------- |
+| Basic       | Finish      | dada  |             |
+|             |             |       |             |

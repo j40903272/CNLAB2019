@@ -8,16 +8,17 @@
 
 
 #### Add detect
-| Method      | Status      | Write | Discription |
-| ----------- | ----------- | ----- | ----------- |
-| Basic       | Finish      | dada  |             |
-| Entropy     |             |       |             |
-| Pattern     |             |       |             |
-| Connection  |             |       |             |
-
-
-#### Add Mitigation 
 | Method      | Status      | Write | Discription                   |
 | ----------- | ----------- | ----- | ----------------------------- |
 | Basic       | Finish      | dada  |                               |
 | Group       | Finish      | irene | detect continuous big packets |
+| Entropy     |             |       |                               |
+| Pattern     |             |       |                               |
+| Connection  |             |       |                               |
+
+
+#### Add Mitigation 
+| Method      | Status      | Write | Discription    |
+| ----------- | ----------- | ----- | -------------- |
+| Basic       | Finish      | dada  |                |
+

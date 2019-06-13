@@ -23,6 +23,7 @@ from ryu.lib import hub
 
 import numpy as np
 from detect import basic_detector, connection_detector
+from mitigation import limit_connection
 
 
 class DDosMonitor(simple_switch_13.SimpleSwitch13):
@@ -31,13 +32,25 @@ class DDosMonitor(simple_switch_13.SimpleSwitch13):
         super(DDosMonitor, self).__init__(*args, **kwargs)
         self.datapaths = {}
         self.monitor_thread = hub.spawn(self._monitor)
-        ####
+        #### add detection ###
         self.detector = basic_detector()
-        self.detector2 = connection_detector()
+        self.detector2 = dst_detector()
+        self.detector3 = entropy_detector()
         ####
 
-    @set_ev_cls(ofp_event.EventOFPStateChange,
-                [MAIN_DISPATCHER, DEAD_DISPATCHER])
+    @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
+    def switch_features_handler(self, ev):
+        datapath = ev.msg.datapath
+        ofproto = datapath.ofproto
+        parser = datapath.ofproto_parser
+        match = parser.OFPMatch()
+        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
+        self.add_flow(datapath, 0, match, actions)
+        ### add mitigation ###
+        limit_connection(datapath, ofproto, parser)
+        ###
+
+    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
     def _state_change_handler(self, ev):
         datapath = ev.datapath
         if ev.state == MAIN_DISPATCHER:
@@ -85,7 +98,10 @@ class DDosMonitor(simple_switch_13.SimpleSwitch13):
         #                      stat.packet_count, stat.byte_count)
         msg = ev.msg
         dpid = ev.msg.datapath.id
+
         self.detector.detect(msg)
+        self.detector2.detect(msg)
+        self.detector3.detect(msg)
 
         sort_list = sorted([flow for flow in ev.msg.body if flow.priority == 1],
                            key=lambda flow: (flow.match['in_port'],
@@ -94,11 +110,13 @@ class DDosMonitor(simple_switch_13.SimpleSwitch13):
         for stats in sort_list:
             in_port = stats.match['in_port']
             out_port = stats.instructions[0].actions[0].port
+            dst = stats.match["eth_dst"]
 
-            if self.detector.detected_flags[stats.cookie]:
+            f1 = self.detector.detected_flags[stats.cookie]
+            f2 = self.detector2.detected_flags[dst]
+            f3 = self.detector3.detected_flags[stats.cookie]
 
-
-
+            if f1 + f2 + f3 > 2:
 
                 ### logging ###
                 self.logger.info("DDos detected !!!!  [Basic detect]")

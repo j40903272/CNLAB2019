@@ -31,24 +31,65 @@ class DDosMonitor(simple_switch_13.SimpleSwitch13):
     def __init__(self, *args, **kwargs):
         super(DDosMonitor, self).__init__(*args, **kwargs)
         self.datapaths = {}
-        self.monitor_thread = hub.spawn(self._monitor)
+        #self.monitor_thread = hub.spawn(self._monitor)
+        self.monitor_thread = hub.spawn(self.print_stat)
+        self.flowstats = {}
+        
         #### add detection ###
         self.detector = basic_detector()
         self.detector2 = dst_detector()
         self.detector3 = entropy_detector()
         ####
 
-    @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
-    def switch_features_handler(self, ev):
-        datapath = ev.msg.datapath
+    def print_stat(self):
+        for cookie in self.flowstats:
+            print(cookie)
+            print(self.flowstats[cookie]["packet_count"], self.flowstats[cookie]["byte_count"])
+            print()
+        hub.sleep(10)
+
+    # @set_ev_cls(ofp_event.EventOFPSwitchFeatures, CONFIG_DISPATCHER)
+    # def switch_features_handler(self, ev):
+    #     datapath = ev.msg.datapath
+    #     ofproto = datapath.ofproto
+    #     parser = datapath.ofproto_parser
+    #     match = parser.OFPMatch()
+    #     actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
+    #     self.add_flow(datapath, 0, match, actions)
+    #     ### add mitigation ###
+    #     limit_connection(datapath, ofproto, parser)
+    #     ###
+
+    @set_ev_cls(stplib.EventPacketIn, MAIN_DISPATCHER)
+    def _packet_in_handler(self, ev):
+        msg = ev.msg
+        datapath = msg.datapath
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
-        match = parser.OFPMatch()
-        actions = [parser.OFPActionOutput(ofproto.OFPP_CONTROLLER, ofproto.OFPCML_NO_BUFFER)]
-        self.add_flow(datapath, 0, match, actions)
-        ### add mitigation ###
-        limit_connection(datapath, ofproto, parser)
-        ###
+        in_port = msg.match['in_port']
+
+        pkt = packet.Packet(msg.data)
+        eth = pkt.get_protocols(ethernet.ethernet)[0]
+
+        dst = eth.dst
+        src = eth.src
+
+        dpid = datapath.id
+        
+
+        self.logger.info("packet in %s %s %s %s", dpid, src, dst, in_port)
+
+        byte_count = msg.total_len
+        cookie = (dst, src, dpid)
+        if cookie in self.flowstats:
+            self.flowstats[cookie]["packet_count"] += 1
+            self.flowstats[cookie]["byte_count"] += byte_count
+        else:
+            self.flowstats[stats.cookie] = {
+                'packet_count': 1,
+                'byte_count': byte_count
+            }
+
 
     @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
     def _state_change_handler(self, ev):

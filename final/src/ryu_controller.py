@@ -126,6 +126,7 @@ class DDosMonitor(simple_switch_13.SimpleSwitch13):
 
         # learn a mac address to avoid FLOOD next time.
         self.mac_to_port[dpid][src] = in_port
+        self.mac_to_port[dpid][dst] = in_port
 
         if dst in self.mac_to_port[dpid]:
             out_port = self.mac_to_port[dpid][dst]
@@ -217,11 +218,11 @@ class DDosMonitor(simple_switch_13.SimpleSwitch13):
             f4 = self.detector4.detected_flags[dst]
             f5 = self.detector5.detected_flags[dst] or self.detector5.detected_flags[src]
 
-            print(stats.cookie, f1, f2, f3, f4, f5)
+            #print(stats.cookie, f1, f2, f3, f4, f5)
             if f1 + f2 + f3 + f4 + f5 >= 2:
 
                 ### logging ###
-                self.logger.info("==========================================================")
+                self.logger.info("\n==========================================================")
                 self.logger.info("DDos detected !!!!  Victim : [%17s]", stats.match["eth_dst"])
                 if f1:
                     self.logger.info("abnormal burst in flow")
@@ -231,6 +232,7 @@ class DDosMonitor(simple_switch_13.SimpleSwitch13):
                     self.logger.info("Entropy change detected")
                 if f5:
                     self.logger.info("abnormal number of fail connections")
+                self.logger.info("\n==========================================================")
                 # self.logger.info('datapath         '
                 #          'in-port  eth-dst           '
                 #          'out-port packets  bytes')

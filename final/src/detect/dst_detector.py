@@ -11,7 +11,7 @@ class dst_detector():
         
 
     def detect(self, msg):
-        print("dst detect")
+        #print("dst detect")
         dst_group = {}
         self.detected_flags = {}
 
@@ -62,7 +62,7 @@ class dst_detector():
 
     def _detect(self, threshold, data, dst):
         difference_list = [data[i] - data[i-1] for i in range(1, len(data))]
-        print difference_list
+        #print difference_list
         if len(difference_list) == 0:
             return 0
 

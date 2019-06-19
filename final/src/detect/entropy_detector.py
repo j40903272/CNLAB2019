@@ -40,10 +40,10 @@ class entropy_detector():
         self.sigma_std_deviation = self.std_deviation_calculator(self.hold_list)        
 #        self.delta_threshold = self.lambda_threshold_multiplicative_factor * self.sigma_std_deviation
         self.delta_threshold = 1
-        print("init delta_threshold", self.delta_threshold)      
+        #print("init delta_threshold", self.delta_threshold)      
               
     def detect(self, msg):
-        print("entropy detect")
+        #print("entropy detect")
         self.detected_flags = 0
         # print(json.dumps(msg.to_jsondict()))
         

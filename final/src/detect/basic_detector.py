@@ -10,7 +10,7 @@ class basic_detector():
 
                 
     def detect(self, msg):
-        print("basic detect")
+        #print("basic detect")
         for stats in msg:
             dst = stats.match["eth_dst"]
             if not stats.cookie in self.flowstats:
@@ -41,7 +41,7 @@ class basic_detector():
 
     def _detect(self, threshold, data, dst):
         difference_list = [data[i] - data[i-1] for i in range(1, len(data))]
-        print difference_list
+        #print difference_list
         if len(difference_list) == 0:
             return 0
 

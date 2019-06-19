@@ -8,7 +8,7 @@ class connection_detector():
 
                 
     def detect(self, msg):
-        print("connection detect")
+        #print("connection detect")
         dst_group = {}
 
         for stats in msg:

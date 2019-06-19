@@ -15,7 +15,7 @@ class dst_detector():
         dst_group = {}
         self.detected_flags = {}
 
-        for stats in msg.body:
+        for stats in msg:
             if not stats.cookie in self.flowstats:
                 self.flowstats[stats.cookie] = {
                     'packet_count': [stats.packet_count],
@@ -27,8 +27,7 @@ class dst_detector():
                 self.flowstats[stats.cookie]["byte_count"] = self.flowstats[stats.cookie]["byte_count"][-self.max_record_length:]
                 self.flowstats[stats.cookie]["packet_count"] = self.flowstats[stats.cookie]["packet_count"][-self.max_record_length:]
 
-
-            dst = (stats.match["eth_dst"], stats.match["dpid"])
+            dst = stats.match["eth_dst"]
             if dst not in dst_group:
                 dst_group[dst] = set()
                 dst_group[dst].add(stats.cookie)
@@ -53,6 +52,8 @@ class dst_detector():
             if check_result_bytes == 1 or check_result_packets == 1:
                 #print 'DDoS detected!!', dst, "bytes / packets:", check_result_bytes, '/', check_result_packets
                 self.detected_flags[dst] = 1
+            else:
+                self.detected_flags[dst] = 0
 
     def pad(self, record, max_len):
         l = len(record)
@@ -61,6 +62,7 @@ class dst_detector():
 
     def _detect(self, threshold, data, dst):
         difference_list = [data[i] - data[i-1] for i in range(1, len(data))]
+        print difference_list
         if len(difference_list) == 0:
             return 0
 
@@ -70,9 +72,11 @@ class dst_detector():
         
         for item in difference_list:
             #print(item - average_difference > 3 * std, item > threshold, std >= 0)
-            if item - average_difference > 3 * std and item > threshold and std >= 0:
-                print(dst, item - average_difference, item, std)
-                print difference_list
+            if item > threshold:
                 return 1
+            if item - average_difference > 3 * std and item > threshold//10:
+                cnt += 1
+                if cnt >= 2: 
+                    return 1
                 
         return 0

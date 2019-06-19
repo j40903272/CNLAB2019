@@ -44,6 +44,7 @@ class entropy_detector():
               
     def detect(self, msg):
         print("entropy detect")
+        self.detected_flags = 0
         # print(json.dumps(msg.to_jsondict()))
         
         for stats in msg.body:

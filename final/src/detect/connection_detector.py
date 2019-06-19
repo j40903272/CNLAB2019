@@ -11,8 +11,8 @@ class connection_detector():
         print("connection detect")
         dst_group = {}
 
-        for stats in msg.body:
-            dst = (stats.match["eth_dst"], stats.match["dpid"])
+        for stats in msg:
+            dst = stats.match["eth_dst"]
             self.detected_flags[dst] = 0
             if dst not in dst_group:
                 dst_group[dst] = 1

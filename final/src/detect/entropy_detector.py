@@ -43,6 +43,7 @@ class entropy_detector():
         print("init delta_threshold", self.delta_threshold)      
               
     def detect(self, msg):
+        print("entropy detect")
         # print(json.dumps(msg.to_jsondict()))
         
         for stats in msg.body:
@@ -57,7 +58,7 @@ class entropy_detector():
             else :
               self.eth_packet_count[mac] = [0,count,count-0,0.0]
         
-        print(self.eth_packet_count)
+        #print(self.eth_packet_count)
               
         total_count = 0
         for each_mac in self.eth_packet_count :
@@ -65,7 +66,7 @@ class entropy_detector():
           if delta_x > 0 :
             total_count += delta_x
         
-        print(total_count)
+        #print(total_count)
         
         if total_count > 0 :        
           H = 0.0    
@@ -74,23 +75,24 @@ class entropy_detector():
             if delta_x > 0 :
               p = delta_x/float(total_count)
               self.eth_packet_count[each_mac][3] = p
-              print(p)
+              #print(p)
               H += -p * math.log(p)
      
           N = len(self.eth_packet_count)
-          H = H / math.log(N)
-          print(H) 
+          H = H / (math.log(N)+1)
+          #print(H) 
           for index in range(len(self.hold_list)):
             if index < len(self.hold_list) - 1: 
               self.hold_list[index][1] = self.hold_list[index+1][1]        
           self.hold_list[-1][1] = H        
           if self.EH - H > self.delta_threshold:
             # ddos
-            self.detected_flags[stats.cookie] = 1
+            self.detected_flags = 1
           else:
             self.EH = self.mean_calculator(self.hold_list)
             self.sigma_std_deviation = self.std_deviation_calculator(self.hold_list)        
             self.delta_threshold = self.lambda_threshold_multiplicative_factor * self.sigma_std_deviation
+            self.detected_flags = 0
         
         # for stats in msg.body:
         #     if not stats.cookie in self.flowstats:
@@ -126,7 +128,7 @@ class entropy_detector():
         std = np.std(difference_list)
         
         for item in difference_list:
-            print(item - average_difference > 3 * std, item > threshold, std >= 0)
+            #print(item - average_difference > 3 * std, item > threshold, std >= 0)
             if item - average_difference > 3 * std and item > threshold and std >= 0:
                 return 1
         return 0

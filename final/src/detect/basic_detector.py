@@ -10,6 +10,7 @@ class basic_detector():
 
                 
     def detect(self, msg):
+        print("basic detect")
         for stats in msg.body:
             if not stats.cookie in self.flowstats:
                 self.flowstats[stats.cookie] = {
@@ -42,9 +43,10 @@ class basic_detector():
 
         average_difference = np.mean(difference_list)
         std = np.std(difference_list)
+        cnt = 0
         
         for item in difference_list:
-            print(item - average_difference > 3 * std, item > threshold, std >= 0)
+            #print(item - average_difference > 3 * std, item > threshold, std >= 0)
             if item - average_difference > 3 * std and item > threshold and std >= 0:
                 return 1
         return 0
